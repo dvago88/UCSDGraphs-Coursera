@@ -9,6 +9,7 @@ public class Edge {
     private String roadName;
     private String roadType;
     private double length;
+//    private double distance;
 
     public Edge(GeographicPoint from, GeographicPoint to, String roadName, String roadType, double length) {
         this.from = from;
@@ -16,7 +17,13 @@ public class Edge {
         this.roadName = roadName;
         this.roadType = roadType;
         this.length = length;
+//        distance = 0;
     }
+
+//    @Override
+//    public int compareTo(Edge o) {
+//        return Double.compare(o.distance, distance);
+//    }
 
     public GeographicPoint getFrom() {
         return from;
