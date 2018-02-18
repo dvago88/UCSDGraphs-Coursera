@@ -17,7 +17,7 @@ public class MapGraph {
     private int numVertices;
     private int numEdges;
     private HashMap<GeographicPoint, Node> vertices;
-    public static int contador = 0;
+    private static int contador = 0;
 
 
     /**
@@ -126,30 +126,34 @@ public class MapGraph {
      */
     public List<GeographicPoint> bfs(GeographicPoint start,
                                      GeographicPoint goal, Consumer<GeographicPoint> nodeSearched) {
-        LinkedList<GeographicPoint> cola = new LinkedList<>();
-        LinkedList<GeographicPoint> path = new LinkedList<>();
-        HashSet<GeographicPoint> revisador = new HashSet<>();
-        HashMap<Node, Node> parents = new HashMap<>();
+        LinkedList<GeographicPoint> queue = new LinkedList<>();//This is the queue to check the nodes
+        LinkedList<GeographicPoint> path = new LinkedList<>();//This is we're going to store the path
+        HashSet<GeographicPoint> checker = new HashSet<>();//This checks if the node have been visited already
+        HashMap<Node, Node> parents = new HashMap<>(); //This map will help us reconstruct the path associating parent node with child node
 
-        cola.add(start);
-        revisador.add(start);
+        queue.add(start);
+        checker.add(start);
 
-        while (!cola.isEmpty()) {
-            GeographicPoint actual = cola.pollFirst();
-            nodeSearched.accept(actual);
-            //Si lo encontro, reconstruya el camino
-            if (pathConstructor(start, goal, path, parents, actual)) return path;
-            List<Edge> edges = vertices.get(actual).getEdges();
-            //Agrego cada uno de los vertices a la cola si aun no estaban:
+        while (!queue.isEmpty()) {
+            GeographicPoint current = queue.pollFirst();
+            nodeSearched.accept(current);
+
+            //If goal is found, rebuild the path and return that path
+            if (pathConstructor(start, goal, path, parents, current)) return path;
+
+            //Find the node associated with the geographicPoint current and the asks for the edges of this node
+            List<Edge> edges = vertices.get(current).getEdges();
+
+            //Add every vertex to the queue if not already there
             for (Edge edge : edges) {
-                if (revisador.add(edge.getTo())) {
-                    cola.add(edge.getTo());
-                    // (Node hijo, Node papa)
-                    parents.put(vertices.get(edge.getTo()), vertices.get(actual));
+                if (checker.add(edge.getTo())) {
+                    queue.add(edge.getTo());
+                    // (Node child, Node parent)
+                    parents.put(vertices.get(edge.getTo()), vertices.get(current));
                 }
             }
         }
-        return null;
+        return null;//This will only happen if it couldn't find a path.
     }
 
 
@@ -180,76 +184,9 @@ public class MapGraph {
      */
     public List<GeographicPoint> dijkstra(GeographicPoint start,
                                           GeographicPoint goal, Consumer<GeographicPoint> nodeSearched) {
-
-        infiniter();
-        contador = 0; // Este contador es para poder ver cuantos nodos visito
-        PriorityQueue<Node> cola = new PriorityQueue<>();
-        LinkedList<GeographicPoint> path = new LinkedList<>();
-        HashSet<Node> revisador = new HashSet<>();
-        HashMap<Node, Node> parents = new HashMap<>();
-
-        vertices.get(start).setDistanceStart(0d);
-        vertices.get(start).setDistanceGoal(0d);
-
-        cola.add(vertices.get(start));
-        while (!cola.isEmpty()) {
-            Node actual = cola.poll();
-            nodeSearched.accept(actual.getLocation());
-            contador++;
-//            Si no ha visitado a actual metalo y haga esto
-            if (revisador.add(actual)) {
-
-                nodeSearched.accept(actual.getLocation());
-                GeographicPoint a = actual.getLocation();//Esto es para poder hacer pathConstructor para los 2 algoritmos
-                //Si lo encontro, reconstruya el camino
-                if (pathConstructor(start, goal, path, parents, a)) {
-                    return path;
-                }
-                List<Edge> edges = actual.getEdges();
-
-                for (Edge edge : edges) {
-                    double dis = edge.getLength();
-                    GeographicPoint other = edge.getTo();
-                    Node hijo = vertices.get(other);
-                    double dist = actual.getDistanceStart();
-                    if (hijo.getDistanceStart() > dist + dis) {
-                        hijo.setDistanceStart(dist + dis);
-                        hijo.setDistanceGoal(0d);
-                        cola.add(hijo);
-                        parents.put(hijo, actual);
-                    }
-                }
-            }
-        }
-        return path;
+        return baseSearch(start, goal, nodeSearched, false);
     }
 
-    private void infiniter() {
-        for (Node value : vertices.values()) {
-            value.setDistanceGoal(Double.POSITIVE_INFINITY);
-            value.setDistanceStart(Double.POSITIVE_INFINITY);
-        }
-    }
-
-    private boolean pathConstructor(GeographicPoint start,
-                                    GeographicPoint goal,
-                                    LinkedList<GeographicPoint> path,
-                                    HashMap<Node, Node> parents,
-                                    GeographicPoint a) {
-        if (a.equals(goal)) {
-            path.add(goal);
-            Node hijo = vertices.get(a);
-            while (true) {
-                Node papa = parents.get(hijo);
-                path.addFirst(papa.getLocation());
-                if (papa.getLocation().equals(start)) {
-                    return true;
-                }
-                hijo = papa;
-            }
-        }
-        return false;
-    }
 
     /**
      * Find the path from start to goal using A-Star search
@@ -277,24 +214,30 @@ public class MapGraph {
      */
     public List<GeographicPoint> aStarSearch(GeographicPoint start,
                                              GeographicPoint goal, Consumer<GeographicPoint> nodeSearched) {
+        return baseSearch(start, goal, nodeSearched, true);
+    }
 
+    private List<GeographicPoint> baseSearch(GeographicPoint start,
+                                             GeographicPoint goal,
+                                             Consumer<GeographicPoint> nodeSearched,
+                                             boolean isA) {
         infiniter();
         contador = 0; // este contador es para poder ver cuantos nodos visito.
-        PriorityQueue<Node> cola = new PriorityQueue<>();
+        PriorityQueue<Node> queue = new PriorityQueue<>();
         LinkedList<GeographicPoint> path = new LinkedList<>();
-        HashSet<Node> revisador = new HashSet<>();
+        HashSet<Node> checker = new HashSet<>();
         HashMap<Node, Node> parents = new HashMap<>();
 
         vertices.get(start).setDistanceStart(0d);
         vertices.get(start).setDistanceGoal(0d);
 
-        cola.add(vertices.get(start));
-        while (!cola.isEmpty()) {
-            Node actual = cola.poll();
+        queue.add(vertices.get(start));
+        while (!queue.isEmpty()) {
+            Node actual = queue.poll();
             nodeSearched.accept(actual.getLocation());
             contador++;
 //            Si no ha visitado a actual metalo y haga esto
-            if (revisador.add(actual)) {
+            if (checker.add(actual)) {
 
                 nodeSearched.accept(actual.getLocation());
                 GeographicPoint a = actual.getLocation();//Esto es para poder hacer pathConstructor para los 2 algoritmos
@@ -309,17 +252,52 @@ public class MapGraph {
                     GeographicPoint other = edge.getTo();
                     Node hijo = vertices.get(other);
                     double distStart = actual.getDistanceStart();
-                    double distGoal = goal.distance(other);
+                    double distGoal;
+                    if (isA) {
+                        distGoal = goal.distance(other);
+                    } else {
+                        distGoal = 0d;
+                    }
                     if (hijo.getDistanceStart() + hijo.getDistanceGoal() > distStart + disStart + distGoal) {
                         hijo.setDistanceStart(distStart + disStart);
                         hijo.setDistanceGoal(distGoal);
-                        cola.add(hijo);
+                        queue.add(hijo);
                         parents.put(hijo, actual);
                     }
                 }
             }
         }
         return path;
+    }
+
+    private void infiniter() {
+        for (Node value : vertices.values()) {
+            value.setDistanceGoal(Double.POSITIVE_INFINITY);
+            value.setDistanceStart(Double.POSITIVE_INFINITY);
+        }
+    }
+
+
+//This method reconstruct the path by looping back through the linkedlist
+    private boolean pathConstructor(GeographicPoint start,
+                                    GeographicPoint goal,
+                                    LinkedList<GeographicPoint> path,
+                                    HashMap<Node, Node> parents,
+                                    GeographicPoint a) {
+// If it found the the goal it will reconstruct the path, if not it will just return false
+        if (a.equals(goal)) {
+            path.add(goal);
+            Node child = vertices.get(a);
+            while (true) {
+                Node parent = parents.get(child);
+                path.addFirst(parent.getLocation());
+                if (parent.getLocation().equals(start)) {
+                    return true;
+                }
+                child = parent;
+            }
+        }
+        return false;
     }
 
 
@@ -397,7 +375,5 @@ public class MapGraph {
 		List<GeographicPoint> route2 = theMap.aStarSearch(start,end);
 
 		*/
-
     }
-
 }

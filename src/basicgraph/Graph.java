@@ -133,6 +133,7 @@ public abstract class Graph {
         }
 
         sequence.sort(Collections.reverseOrder());
+        sequence.remove(sequence.size() - 1);
 
         return sequence;
     }
@@ -287,14 +288,14 @@ public abstract class Graph {
         List<Integer> ordenador = graphFromFile.getDistance2(1);
         Collections.sort(ordenador);
         System.out.println(ordenador);
-        ordenador=graphFromFile2.getDistance2(1);
+        ordenador = graphFromFile2.getDistance2(1);
         Collections.sort(ordenador);
         System.out.println(ordenador);
 
         ordenador = airportGraph.getDistance2(2);
         Collections.sort(ordenador);
         System.out.println(ordenador);
-        ordenador=airportGraph2.getDistance2(2);
+        ordenador = airportGraph2.getDistance2(2);
         Collections.sort(ordenador);
         System.out.println(ordenador);
 

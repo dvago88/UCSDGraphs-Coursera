@@ -10,7 +10,7 @@ public class Node implements Comparable<Node> {
 
     private GeographicPoint location;
     private List<Edge> edges;
-    private double distanceStart; //almacenar esta distancia aca puede ser problematico pues no se puden reutilizar los nodos con facilidad
+    private double distanceStart;
     private double distanceGoal;
 
     public Node(GeographicPoint location) {
